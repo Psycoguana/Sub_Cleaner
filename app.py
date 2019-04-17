@@ -1,5 +1,5 @@
 """
-Every call that comes from menu.py is handled here; some of these functions
+Every call that comes from main.py is handled here; some of these functions
 will be calling data.py if they need anything from the database.
 """
 
@@ -7,7 +7,6 @@ import os
 import fnmatch
 from typing import List, Any
 from sqlite3 import DatabaseError
-
 
 from data import *
 
@@ -165,8 +164,14 @@ class Sub:
 
     def remove_junk(self, encoding, sub_paths):
         """Remove unwanted lines from sub files"""
+        sub_path_lst = []
+        if sub_paths is dict:
+            for name, sub_path in sub_paths.items():
+                sub_path.append(sub_path_lst)
+        elif sub_paths is list:
+            sub_paths.append(sub_path_lst)
 
-        for name, sub_path in sub_paths.items():
+        for sub_path in sub_path_lst:
             opened_sub = open(os.path.join(self.parent, sub_path), 'r', encoding=encoding)
             try:
                 for line in opened_sub:
