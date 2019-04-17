@@ -164,14 +164,15 @@ class Sub:
 
     def remove_junk(self, encoding, sub_paths):
         """Remove unwanted lines from sub files"""
-        sub_path_lst = []
-        if sub_paths is dict:
-            for name, sub_path in sub_paths.items():
-                sub_path.append(sub_path_lst)
-        elif sub_paths is list:
-            sub_paths.append(sub_path_lst)
+        # sub_path_lst = []
+        # if isinstance(sub_paths, dict):
+        #     for name, sub_path in sub_paths.items():
+        #         sub_path_lst.append(sub_path)
+        # elif isinstance(sub_paths, list):
+        #     for path in sub_paths:
+        #         sub_path_lst.append(path)
 
-        for sub_path in sub_path_lst:
+        for sub_name, sub_path in sub_paths.items():
             opened_sub = open(os.path.join(self.parent, sub_path), 'r', encoding=encoding)
             try:
                 for line in opened_sub:
@@ -180,10 +181,10 @@ class Sub:
                     # This is case-INSENSITIVE. It also allows wildcards.
                     for match in blacklist_match:
                         if fnmatch.fnmatch(line, match):
-                            print(f'Cleaning {name}')
+                            print(f'Cleaning {sub_name}')
                             print(line)
 
-                            self.cleaned_files.append(name)
+                            self.cleaned_files.append(sub_name)
                             line = line.replace(line, '')
                     global lst
                     lst.append(line)
