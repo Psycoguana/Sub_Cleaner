@@ -164,13 +164,6 @@ class Sub:
 
     def remove_junk(self, encoding, sub_paths):
         """Remove unwanted lines from sub files"""
-        # sub_path_lst = []
-        # if isinstance(sub_paths, dict):
-        #     for name, sub_path in sub_paths.items():
-        #         sub_path_lst.append(sub_path)
-        # elif isinstance(sub_paths, list):
-        #     for path in sub_paths:
-        #         sub_path_lst.append(path)
 
         for sub_name, sub_path in sub_paths.items():
             opened_sub = open(os.path.join(self.parent, sub_path), 'r', encoding=encoding)
