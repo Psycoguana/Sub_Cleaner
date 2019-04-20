@@ -184,7 +184,7 @@ class Sub:
 
             # If file can't be opened in UTF-8, use ISO-8859-1 instead.
             except UnicodeDecodeError:
-                self.remove_junk('ISO-8859-1', sub_path)
+                self.remove_junk('ISO-8859-1', {sub_name:sub_path})
 
             # Opens each and every file in write mode
             # and replaces the text with the new clean text.
