@@ -43,8 +43,8 @@ blacklist_match = ['[###]',
 
 lst: List[Any] = []
 
-Database = ConnectionToDatabase()
-database_name = Database.get_name()
+DATABASE = ConnectionToDatabase()
+DATABASE_NAME = DATABASE.get_name()
 new_subs = {}
 sub_dict = {}
 
@@ -55,7 +55,6 @@ class Sub:
         self.parent = parent
         self.encoding = 'UTF-8'
         self.scan_type = scan_type
-        self.database = ConnectionToDatabase()
         self.cleaned_files = []
 
     def start_scan(self):
@@ -72,7 +71,7 @@ class Sub:
         self.normal_or_full()
 
         # If subs with ads were found, update the ad_found column with a 1.
-        Database.update_database(self.cleaned_files)
+        DATABASE.update_database(self.cleaned_files)
 
         self.count_scanned_files()
 
@@ -80,16 +79,16 @@ class Sub:
         """Creates database if not found in parent directory"""
 
         dir_files = os.listdir(self.parent)
-        if database_name in dir_files:
+        if DATABASE_NAME in dir_files:
             pass
         else:
-            Database.create()
+            DATABASE.create()
 
     @staticmethod
     def get_database_names():
         """Get every value in the database"""
 
-        Database.get_values()
+        DATABASE.get_values()
 
     def get_sub_paths(self):
         """Get every .srt file name and absolute path under parent folder"""
@@ -109,10 +108,11 @@ class Sub:
                     except OSError:
                         pass
 
-    def is_in_database(self):
+    @staticmethod
+    def is_in_database():
         """Get every new sub which will be inserted to the db by insert_to_db"""
 
-        connection = sqlite3.connect(self.database.get_name())
+        connection = sqlite3.connect(DATABASE_NAME)
         # Change default transaction value, highly improves database writing speed.
         connection.isolation_level = None
         cursor = connection.cursor()
@@ -145,13 +145,14 @@ class Sub:
         else:  # Normal scan
             self.remove_junk(self.encoding, new_subs)
 
-    def insert_to_database(self, to_insert):
+    @staticmethod
+    def insert_to_database(to_insert):
         """
         Insert every new subtitle name into database.
         Default value for ad_found column will be 0
         """
 
-        connection = sqlite3.connect(self.database.get_name())
+        connection = sqlite3.connect(DATABASE_NAME)
         cursor = connection.cursor()
 
         to_insert_set = set(to_insert)  # Remove duplicated strings.
@@ -184,7 +185,7 @@ class Sub:
 
             # If file can't be opened in UTF-8, use ISO-8859-1 instead.
             except UnicodeDecodeError:
-                self.remove_junk('ISO-8859-1', {sub_name:sub_path})
+                self.remove_junk('ISO-8859-1', {sub_name: sub_path})
 
             # Opens each and every file in write mode
             # and replaces the text with the new clean text.
