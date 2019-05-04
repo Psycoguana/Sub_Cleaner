@@ -31,6 +31,7 @@ blacklist_match = ['[###]',
                    '*subscene*',
                    '*Subtitulado por*',
                    '*subtitulamos*',
+                   '*Synchronized by*'
                    '*Sync * Corrected*',
                    'Sync & corrections by *',
                    '*Sync by *',
