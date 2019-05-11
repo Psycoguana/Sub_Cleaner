@@ -16,6 +16,7 @@ blacklist_match = ['[###]',
                    'Apóyanos y conviértete en miembro VIP Para',
                    '*Addic7ed*',
                    '*argenteam*',
+                   '*AllSubs*',
                    '*corrected by*',
                    'Entre a AmericasCardroom. com Hoy',
                    'Everyone is intimidated by a shark. Become',
@@ -184,24 +185,29 @@ class Sub:
                     global lst
                     lst.append(line)
 
+                self.write_new_sub(encoding, sub_path)
+
             # If file can't be opened in UTF-8, use ISO-8859-1 instead.
             except UnicodeDecodeError:
                 self.remove_junk('ISO-8859-1', {sub_name: sub_path})
-
-            # Opens each and every file in write mode
-            # and replaces the text with the new clean text.
-            try:
-                opened_sub = open(os.path.join(self.parent, sub_path), 'w', encoding=self.encoding)
-                for line in lst:
-                    opened_sub.write(line)
-
-                    # If lst in not cleared here, it will copy the contents of every previous
-                    # file when writing the current one.
-                    lst = []
             except OSError:
                 pass
 
             opened_sub.close()
+
+    def write_new_sub(self, encoding, sub_path):
+        """ Opens file in write mode and replaces
+        the text with the new clean text."""
+
+        opened_sub = open(os.path.join(self.parent, sub_path), 'w', encoding=encoding)
+        global lst
+        for line in lst:
+            opened_sub.write(line)
+
+            # If lst in not cleared here, it will copy the contents of every previous
+            # file when writing the current one.
+            lst = []
+        opened_sub.close()
 
     def count_scanned_files(self):
         """Count new scanned files, and cleaned files."""
