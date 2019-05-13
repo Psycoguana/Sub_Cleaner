@@ -5,6 +5,7 @@ will be calling data.py if they need anything from the database.
 
 import os
 import fnmatch
+from datetime import datetime
 from typing import List, Any
 from sqlite3 import DatabaseError
 
@@ -90,15 +91,20 @@ class Sub:
     def get_database_names():
         """Get every value in the database"""
 
-        DATABASE.get_values()
+        return DATABASE.get_values()
 
     def get_sub_paths(self):
         """Get every .srt file name and absolute path under parent folder"""
 
+        sub_info = []
+
         for file in os.listdir(self.parent):
             if file.endswith('.srt'):
                 file_abspath = os.path.abspath(os.path.join(self.parent, file))
-                sub_dict.update({file: file_abspath})
+                file_last_mod = os.path.getmtime(file_abspath)  # Get Unix timestamp
+                file_last_mod = datetime.fromtimestamp(file_last_mod)  # Convert it to datetime
+
+                sub_info.append([file, file_abspath, file_last_mod])
 
             else:
                 current_path = "".join((self.parent, "/", file))
@@ -109,9 +115,9 @@ class Sub:
 
                     except OSError:
                         pass
+        return sub_info
 
-    @staticmethod
-    def is_in_database():
+    def is_in_database(self):
         """Get every new sub which will be inserted to the db by insert_to_db"""
 
         connection = sqlite3.connect(DATABASE_NAME)
@@ -119,16 +125,24 @@ class Sub:
         connection.isolation_level = None
         cursor = connection.cursor()
 
+        sub_info = self.get_sub_paths
+
         try:
-            for name, path in sub_dict.items():
-                cursor.execute('SELECT count(*) FROM subs WHERE name = ?', (name,))
+            for sub in sub_info:
+                name = sub[0]
+                path = sub[1]
+                file_last_mod_date = sub[2]
+
+                cursor.execute('SELECT count(*) FROM subs WHERE name = ?', name)
                 is_in_database = cursor.fetchone()[0]
 
                 if is_in_database == 1:  # In database
-                    pass
+                    cursor.execute('SELECT * FROM subs WHERE last_mod_date < ?', file_last_mod_date)
+                    new_subs.update({cursor.fetchone()[0]: cursor.fetchone()[1]})
 
                 elif is_in_database == 0:  # Not in database
                     new_subs.update({name: path})
+
         except DatabaseError as error:
             print(error)
             connection.rollback()
@@ -154,13 +168,14 @@ class Sub:
         Default value for ad_found column will be 0
         """
 
+        current_time = datetime.datetime.now()
         connection = sqlite3.connect(DATABASE_NAME)
         cursor = connection.cursor()
 
         to_insert_set = set(to_insert)  # Remove duplicated strings.
 
         for name in to_insert_set:
-            cursor.execute('INSERT OR IGNORE INTO subs VALUES (?, ?)', (name, 0))
+            cursor.execute('INSERT OR IGNORE INTO subs VALUES (?, ?, ?)', (name, 0, current_time))
 
         connection.commit()
         connection.close()
@@ -241,3 +256,5 @@ def format_timer(total_time):
         total_time = '{:3.2f} minutes'.format(total_time / 60)
 
     print("Completed in " + total_time)
+
+# TODO: Fix this mess

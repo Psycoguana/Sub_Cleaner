@@ -4,6 +4,7 @@ such as getting it's name, it's values and even some statistics.
 """
 
 import sqlite3
+import datetime
 
 from config import DATABASE
 
@@ -14,15 +15,14 @@ class ConnectionToDatabase:
 
     def get_name(self):
         """Return the database name"""
-
         return self.database
 
     def create(self):
-        """Create database if it doesn't exists already"""
+        """Create database if it doesn't exists already."""
         connection = sqlite3.connect(self.database)
         cursor = connection.cursor()
 
-        cursor.execute('CREATE TABLE IF NOT EXISTS subs(name text primary key, ad_found integer)')
+        cursor.execute('CREATE TABLE IF NOT EXISTS subs(name text primary key, ad_found integer, last_mod_date integer)')
 
         connection.commit()
         connection.close()
@@ -34,7 +34,7 @@ class ConnectionToDatabase:
 
         cursor.execute('SELECT * FROM subs')
 
-        sub_list = [[{'name': row[0], 'ad_found': row[1]} for row in cursor.fetchall()]]
+        sub_list = [[{'name': row[0], 'ad_found': row[1], 'last_mod_date': row[2]} for row in cursor.fetchall()]]
 
         connection.commit()
         connection.close()
@@ -66,7 +66,6 @@ class ConnectionToDatabase:
         If there are any new cleaned files (subs with ads),
         update the ad_found column in the database with a 1.
         """
-
         if cleaned_files:
             to_update = set(cleaned_files)  # Remove duplicated strings.
 
@@ -75,7 +74,7 @@ class ConnectionToDatabase:
 
             try:
                 for sub_name in to_update:
-                    cursor.execute('UPDATE subs SET ad_found = 1 WHERE name = ?', (sub_name,))
+                    cursor.execute('UPDATE subs SET ad_found = 1 WHERE name = ?, last_mod_date = ?', (sub_name, datetime.datetime.now()))
                     print(f"Updated {sub_name} into the db")
 
             except TypeError as error:
