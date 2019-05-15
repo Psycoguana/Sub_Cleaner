@@ -10,39 +10,7 @@ from typing import List, Any
 from sqlite3 import DatabaseError
 
 from data import *
-
-blacklist_match = ['[###]',
-                   'a Card Shark AMERICASCARDROOM*',
-                   'Advertise your product or brand here',
-                   'Apóyanos y conviértete en miembro VIP Para',
-                   '*Addic7ed*',
-                   '*argenteam*',
-                   '*AllSubs*',
-                   '*corrected by*',
-                   'Entre a AmericasCardroom. com Hoy',
-                   'Everyone is intimidated by a shark. Become',
-                   '*Juegue Poker en Línea por Dinero Real*',
-                   '*OpenSubtitles*',
-                   '*Resync for*',
-                   'Ripped By *',
-                   'Sigue "Community" en',
-                   'Subtitles by *',
-                   'Subtítulos por *',
-                   'Support us and become VIP member',
-                   '*Subs*Team*',
-                   '*subscene*',
-                   '*Subtitulado por*',
-                   '*subtitulamos*',
-                   '*Synchronized by*'
-                   '*Sync * Corrected*',
-                   'Sync & corrections by *',
-                   '*Sync by *',
-                   '*tvsubtitles*',
-                   'Una traducción de *',
-                   'Tacho8',
-                   'www. com',
-                   'www. es'
-                   ]
+from config import BLACKLIST
 
 lst: List[Any] = []
 
@@ -190,7 +158,7 @@ class Sub:
 
                     # Looks for matching lines inside file.
                     # This is case-INSENSITIVE. It also allows wildcards.
-                    for match in blacklist_match:
+                    for match in BLACKLIST:
                         if fnmatch.fnmatch(line, match):
                             print(f'Cleaning {sub_name}')
                             print(line)
