@@ -3,14 +3,14 @@ Every call that comes from main.py is handled here; some of these functions
 will be calling data.py if they need anything from the database.
 """
 
-import os
 import fnmatch
-from datetime import datetime
-from typing import List, Any
+import os
+from datetime import datetime as dt
 from sqlite3 import DatabaseError
+from typing import List, Any
 
-from data import *
 from config import BLACKLIST
+from data import *
 
 lst: List[Any] = []
 
@@ -35,8 +35,7 @@ class Sub:
         """
 
         self.create_sub_table()
-        self.get_sub_paths()
-        self.is_in_database()
+        self.get_sub_info()
 
         # Insert new subs into db, then check scan type and call remove_junk accordingly.
         self.normal_or_full()
@@ -61,7 +60,7 @@ class Sub:
 
         return DATABASE.get_values()
 
-    def get_sub_paths(self):
+    def get_sub_info(self):
         """Get every .srt file name and absolute path under parent folder"""
 
         sub_info = []
@@ -70,7 +69,7 @@ class Sub:
             if file.endswith('.srt'):
                 file_abspath = os.path.abspath(os.path.join(self.parent, file))
                 file_last_mod = os.path.getmtime(file_abspath)  # Get Unix timestamp
-                file_last_mod = datetime.fromtimestamp(file_last_mod)  # Convert it to datetime
+                file_last_mod = dt.fromtimestamp(file_last_mod)  # Convert it to datetime
 
                 sub_info.append([file, file_abspath, file_last_mod])
 
@@ -79,37 +78,40 @@ class Sub:
                 if os.path.isdir(current_path):
                     try:
                         subfolder = Sub(current_path, self.scan_type)
-                        subfolder.get_sub_paths()
+                        subfolder.get_sub_info()
 
                     except OSError:
                         pass
-        return sub_info
+        self.is_in_database(sub_info)
 
-    def is_in_database(self):
+    def is_in_database(self, sub_info):
         """Get every new sub which will be inserted to the db by insert_to_db"""
+
+        # TODO: move this function to data.py
 
         connection = sqlite3.connect(DATABASE_NAME)
         # Change default transaction value, highly improves database writing speed.
         connection.isolation_level = None
         cursor = connection.cursor()
 
-        sub_info = self.get_sub_paths
-
         try:
             for sub in sub_info:
-                name = sub[0]
-                path = sub[1]
+                sub_name = sub[0]
+                sub_path = sub[1]
                 file_last_mod_date = sub[2]
 
-                cursor.execute('SELECT count(*) FROM subs WHERE name = ?', name)
+                cursor.execute('SELECT count(*) FROM subs WHERE name = ?', (sub_name,))
                 is_in_database = cursor.fetchone()[0]
 
                 if is_in_database == 1:  # In database
-                    cursor.execute('SELECT * FROM subs WHERE last_mod_date < ?', file_last_mod_date)
-                    new_subs.update({cursor.fetchone()[0]: cursor.fetchone()[1]})
+                    cursor.execute('SELECT name FROM subs WHERE name = ? AND last_mod_date < ?',
+                                   (sub_name, file_last_mod_date,))
+
+                    if cursor.fetchone():
+                        new_subs.update({sub_name: sub_path})
 
                 elif is_in_database == 0:  # Not in database
-                    new_subs.update({name: path})
+                    new_subs.update({sub_name: sub_path})
 
         except DatabaseError as error:
             print(error)
@@ -137,13 +139,14 @@ class Sub:
         """
 
         current_time = datetime.datetime.now()
+
         connection = sqlite3.connect(DATABASE_NAME)
         cursor = connection.cursor()
 
         to_insert_set = set(to_insert)  # Remove duplicated strings.
 
         for name in to_insert_set:
-            cursor.execute('INSERT OR IGNORE INTO subs VALUES (?, ?, ?)', (name, 0, current_time))
+            cursor.execute('INSERT OR IGNORE INTO subs VALUES (?, ?, ?)', (name, 0, current_time,))
 
         connection.commit()
         connection.close()
@@ -163,12 +166,12 @@ class Sub:
                             print(f'Cleaning {sub_name}')
                             print(line)
 
-                            self.cleaned_files.append(sub_name)
                             line = line.replace(line, '')
                     global lst
                     lst.append(line)
 
                 self.write_new_sub(encoding, sub_path)
+                self.cleaned_files.append(sub_name)
 
             # If file can't be opened in UTF-8, use ISO-8859-1 instead.
             except UnicodeDecodeError:

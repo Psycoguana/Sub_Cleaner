@@ -3,15 +3,15 @@ These functions handle every kind of connection to the database,
 such as getting it's name, it's values and even some statistics.
 """
 
-import sqlite3
 import datetime
+import sqlite3
 
 from config import DATABASE
 
 
 class ConnectionToDatabase:
     def __init__(self):
-        self.database = "".join((DATABASE, "sub_master.db"))
+        self.database = "".join((DATABASE, "test.db"))
 
     def get_name(self):
         """Return the database name"""
@@ -22,7 +22,8 @@ class ConnectionToDatabase:
         connection = sqlite3.connect(self.database)
         cursor = connection.cursor()
 
-        cursor.execute('CREATE TABLE IF NOT EXISTS subs(name text primary key, ad_found integer, last_mod_date integer)')
+        cursor.execute(
+            'CREATE TABLE IF NOT EXISTS subs(name text primary key, ad_found integer, last_mod_date integer)')
 
         connection.commit()
         connection.close()
@@ -66,6 +67,9 @@ class ConnectionToDatabase:
         If there are any new cleaned files (subs with ads),
         update the ad_found column in the database with a 1.
         """
+
+        current_time = datetime.datetime.now()
+
         if cleaned_files:
             to_update = set(cleaned_files)  # Remove duplicated strings.
 
@@ -74,7 +78,9 @@ class ConnectionToDatabase:
 
             try:
                 for sub_name in to_update:
-                    cursor.execute('UPDATE subs SET ad_found = 1 WHERE name = ?, last_mod_date = ?', (sub_name, datetime.datetime.now()))
+                    # TODO: add better handle of ad_found = 1
+                    cursor.execute('UPDATE subs SET ad_found = 1, last_mod_date = ? WHERE name = ?',
+                                   (current_time, sub_name,))
                     print(f"Updated {sub_name} into the db")
 
             except TypeError as error:

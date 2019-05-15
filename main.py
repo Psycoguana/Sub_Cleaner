@@ -1,17 +1,15 @@
 """
 This handles the user actions; at the end, there is an argparse call.
 """
+import argparse
 import sys
 import time
-import argparse
 from datetime import datetime
 
-
-from config import PARENT_FOLDER
 from app import Sub, format_timer
-from app import blacklist_match as blacklist
+from config import BLACKLIST as blacklist
+from config import PARENT_FOLDER
 from data import ConnectionToDatabase as Database
-
 
 USER_CHOICE = """
     ______             __                        __
