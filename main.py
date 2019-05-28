@@ -7,9 +7,8 @@ import argparse
 from datetime import datetime
 
 
-from config import PARENT_FOLDER
+from config import PARENT_FOLDER, BLACKLIST
 from app import Sub, format_timer
-from app import blacklist_match as blacklist
 from data import ConnectionToDatabase as Database
 
 
@@ -69,7 +68,7 @@ class Menu:
 
             elif user_input == '3':
                 # Make the sorting case insensitive
-                ordered_blacklist = sorted(blacklist, key=str.lower)
+                ordered_blacklist = sorted(BLACKLIST, key=str.lower)
 
                 for line in ordered_blacklist:
                     print(line)
