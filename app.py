@@ -41,7 +41,7 @@ class Sub:
         self.normal_or_full()
 
         # If subs with ads were found, update the ad_found column with a 1.
-        DATABASE.update_database(self.cleaned_files)
+        DATABASE.update_database(self.cleaned_files, True)
 
         self.count_scanned_files()
 
@@ -154,6 +154,8 @@ class Sub:
     def remove_junk(self, encoding, sub_paths):
         """Remove unwanted lines from sub files"""
 
+        update_dates = []
+
         for sub_name, sub_path in sub_paths.items():
             opened_sub = open(os.path.join(self.parent, sub_path), 'r', encoding=encoding)
             try:
@@ -163,6 +165,7 @@ class Sub:
                     # This is case-INSENSITIVE. It also allows wildcards.
                     for match in BLACKLIST:
                         if fnmatch.fnmatch(line, match):
+                            self.cleaned_files.append(sub_name)
                             print(f'Cleaning {sub_name}')
                             print(line)
 
@@ -171,7 +174,9 @@ class Sub:
                     lst.append(line)
 
                 self.write_new_sub(encoding, sub_path)
-                self.cleaned_files.append(sub_name)
+
+                if opened_sub not in self.cleaned_files:
+                    update_dates.append(sub_name)
 
             # If file can't be opened in UTF-8, use ISO-8859-1 instead.
             except UnicodeDecodeError:
@@ -179,7 +184,9 @@ class Sub:
             except OSError:
                 pass
 
-            opened_sub.close()
+            finally:
+                opened_sub.close()
+        DATABASE.update_database(update_dates, False)
 
     def write_new_sub(self, encoding, sub_path):
         """ Opens file in write mode and replaces

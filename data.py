@@ -6,12 +6,12 @@ such as getting it's name, it's values and even some statistics.
 import datetime
 import sqlite3
 
-from config import DATABASE
+from config import DATABASE_LOCATION, DATABASE_NAME
 
 
 class ConnectionToDatabase:
     def __init__(self):
-        self.database = "".join((DATABASE, "test.db"))
+        self.database = "".join((DATABASE_LOCATION, DATABASE_NAME))
 
     def get_name(self):
         """Return the database name"""
@@ -62,7 +62,7 @@ class ConnectionToDatabase:
         print(f"Scanned subs: {subs_number}" + '\n')
         print(f"Cleaned subs: {ads_number}" + '\n')
 
-    def update_database(self, cleaned_files):
+    def update_database(self, cleaned_files, is_dirty):
         """
         If there are any new cleaned files (subs with ads),
         update the ad_found column in the database with a 1.
@@ -79,9 +79,13 @@ class ConnectionToDatabase:
             try:
                 for sub_name in to_update:
                     # TODO: add better handle of ad_found = 1
-                    cursor.execute('UPDATE subs SET ad_found = 1, last_mod_date = ? WHERE name = ?',
-                                   (current_time, sub_name,))
-                    print(f"Updated {sub_name} into the db")
+                    if is_dirty:
+                        cursor.execute('UPDATE subs SET ad_found = 1, last_mod_date = ? WHERE name = ?',
+                                       (current_time, sub_name,))
+                        print(f"Updated {sub_name} into the db")
+                    elif not is_dirty:
+                        cursor.execute('UPDATE subs SET last_mod_date = ? WHERE name = ?',
+                                       (str(current_time), sub_name,))
 
             except TypeError as error:
                 print(error)
