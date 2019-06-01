@@ -166,7 +166,7 @@ class Sub:
                     # Looks for matching lines inside file.
                     # This is case-INSENSITIVE. It also allows wildcards.
                     for match in BLACKLIST:
-                        if fnmatch.fnmatch(line, match):
+                        if fnmatch.fnmatch(line.lower(), match.lower()):
                             self.cleaned_files.append(sub_name)
                             print(f'Cleaning {sub_name}')
                             print(line)
