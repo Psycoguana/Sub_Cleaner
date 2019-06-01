@@ -212,8 +212,11 @@ class Sub:
         if new_subs == {}:
             print("\nNo new subs found")
 
+        elif new_subs == 1:
+            print("\nI scanned " + str(len(new_subs)) + " subtitle.")
+
         else:
-            print("\nI scanned " + str(len(new_subs)) + " subtitle/s.")
+            print("\nI scanned " + str(len(new_subs)) + " subtitles.")
 
             if not len(self.cleaned_files):
                 print("None of them had recognized ads. ")
@@ -236,5 +239,3 @@ def format_timer(total_time):
         total_time = '{:3.2f} minutes'.format(total_time / 60)
 
     print("Completed in " + total_time)
-
-# TODO: Fix this mess

@@ -81,7 +81,7 @@ class ConnectionToDatabase:
                     if is_dirty:
                         cursor.execute('UPDATE subs SET ad_found = 1, last_mod_date = ? WHERE name = ?',
                                        (current_time, sub_name,))
-                        print(f"Updated {sub_name} into the db")
+                        print(f"{sub_name} updated")
                     elif not is_dirty:
                         cursor.execute('UPDATE subs SET last_mod_date = ? WHERE name = ?',
                                        (str(current_time), sub_name,))
