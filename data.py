@@ -78,7 +78,6 @@ class ConnectionToDatabase:
 
             try:
                 for sub_name in to_update:
-                    # TODO: add better handle of ad_found = 1
                     if is_dirty:
                         cursor.execute('UPDATE subs SET ad_found = 1, last_mod_date = ? WHERE name = ?',
                                        (current_time, sub_name,))

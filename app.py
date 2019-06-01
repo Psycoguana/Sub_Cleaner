@@ -84,7 +84,8 @@ class Sub:
                         pass
         self.is_in_database(sub_info)
 
-    def is_in_database(self, sub_info):
+    @staticmethod
+    def is_in_database(sub_info):
         """Get every new sub which will be inserted to the db by insert_to_db"""
 
         # TODO: move this function to data.py
@@ -104,6 +105,7 @@ class Sub:
                 is_in_database = cursor.fetchone()[0]
 
                 if is_in_database == 1:  # In database
+                    # Select a row if the actual file has been modified since the last scan.
                     cursor.execute('SELECT name FROM subs WHERE name = ? AND last_mod_date < ?',
                                    (sub_name, file_last_mod_date,))
 
@@ -211,7 +213,7 @@ class Sub:
             print("\nNo new subs found")
 
         else:
-            print("\nI scanned " + str(len(new_subs)) + " new subtitles.")
+            print("\nI scanned " + str(len(new_subs)) + " subtitle/s.")
 
             if not len(self.cleaned_files):
                 print("None of them had recognized ads. ")
