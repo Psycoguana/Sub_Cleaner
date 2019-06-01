@@ -18,6 +18,7 @@ DATABASE = ConnectionToDatabase()
 DATABASE_NAME = DATABASE.get_name()
 new_subs = {}
 sub_dict = {}
+sub_info = []
 
 
 class Sub:
@@ -63,15 +64,17 @@ class Sub:
     def get_sub_info(self):
         """Get every .srt file name and absolute path under parent folder"""
 
-        sub_info = []
-
         for file in os.listdir(self.parent):
             if file.endswith('.srt'):
                 file_abspath = os.path.abspath(os.path.join(self.parent, file))
                 file_last_mod = os.path.getmtime(file_abspath)  # Get Unix timestamp
                 file_last_mod = dt.fromtimestamp(file_last_mod)  # Convert it to datetime
 
+                global sub_info
+                # TODO: Please change this horror.
+                #  Remove_junk takes a dict, so we need to pass a dict (hopefully) created from the sub_info list.
                 sub_info.append([file, file_abspath, file_last_mod])
+                sub_dict.update({file: file_abspath})
 
             else:
                 current_path = "".join((self.parent, "/", file))
@@ -207,16 +210,19 @@ class Sub:
     def count_scanned_files(self):
         """Count new scanned files, and cleaned files."""
 
+        # TODO: This doesn't work, it will always say 1 sub was scanned
+
         global new_subs
 
         if new_subs == {}:
             print("\nNo new subs found")
 
         elif new_subs == 1:
-            print("\nI scanned " + str(len(new_subs)) + " subtitle.")
+            print("\nI scanned " + str(len(new_subs)) + f" subtitle.\n {new_subs}")
 
         else:
-            print("\nI scanned " + str(len(new_subs)) + " subtitles.")
+            print("\nI scanned " + str(len(new_subs)) + f" subtitles:")
+            print([x for x in new_subs.keys()])
 
             if not len(self.cleaned_files):
                 print("None of them had recognized ads. ")
