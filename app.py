@@ -255,4 +255,7 @@ def format_timer(total_time):
     else:
         total_time = '{:3.2f} minutes'.format(total_time / 60)
 
-    print("Completed in " + total_time)
+    finished_message = "Completed in " + total_time
+
+    # Print finished_message in green bold
+    print('\033[92m' + '\033[1m' + finished_message + '\033[0m')
