@@ -1,8 +1,8 @@
-DATABASE_LOCATION = '/home/psyco/Programming/Python/Sub_cleaner/test/'  # Folder where the database is located
+DATABASE_LOCATION = '/home/psyco/Programming/Python/Sub_cleaner/'  # Folder where the database is located
 
-DATABASE_NAME = 'test.db'  # Databas name
+DATABASE_NAME = 'sub_master.db'  # Databas name
 
-PARENT_FOLDER = '/home/psyco/Programming/Python/Sub_cleaner/test'  # Folder to scan
+PARENT_FOLDER = '/mnt/datos/Users/Psycoguana/Videos'  # Folder to scan
 
 BLACKLIST = ['[###]',
              '*a Card Shark AMERICASCARDROOM*',
@@ -18,7 +18,7 @@ BLACKLIST = ['[###]',
              '*OpenSubtitles*',
              '*Resync*for*',
              '*Resync*improved*',
-             '*Ripped*By*',
+             '*Ripped?By*',
              '*Sigue "Community" en*',
              '*Subtitles*by*',
              '*Subt?tulos*por*',
