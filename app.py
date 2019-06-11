@@ -31,14 +31,15 @@ class Sub:
 
     def start_scan(self):
         """
-        I thinks this could be called a wrapper? Call this function and all the necessary functions
+        Call this function and all the necessary functions
         get called aswell.
         """
 
         self.create_sub_table()
         self.get_sub_info()
 
-        # Insert new subs into db, then check scan type and call remove_junk accordingly.
+        # Insert new subs into db,
+        # then check scan type and call remove_junk accordingly.
         self.normal_or_full()
 
         # If subs with ads were found, update the ad_found column with a 1.
@@ -126,7 +127,10 @@ class Sub:
         connection.close()
 
     def normal_or_full(self):
-        """Decide whether it should pass every sub to remove_junk or just new ones"""
+        """
+        Decide whether it should pass every sub
+        to remove_junk or just new ones
+        """
 
         self.insert_to_database(new_subs)
 
@@ -151,7 +155,8 @@ class Sub:
         to_insert_set = set(to_insert)  # Remove duplicated strings.
 
         for name in to_insert_set:
-            cursor.execute('INSERT OR IGNORE INTO subs VALUES (?, ?, ?)', (name, 0, current_time,))
+            cursor.execute('INSERT OR IGNORE INTO subs VALUES (?, ?, ?)',
+                (name, 0, current_time,))
 
         connection.commit()
         connection.close()
@@ -162,7 +167,8 @@ class Sub:
         update_dates = []
 
         for sub_name, sub_path in sub_paths.items():
-            opened_sub = open(os.path.join(self.parent, sub_path), 'r', encoding=encoding)
+            opened_sub = open(os.path.join(self.parent, sub_path), 'r',
+                encoding=encoding)
             try:
                 for line in opened_sub:
 
@@ -202,8 +208,8 @@ class Sub:
         for line in lst:
             opened_sub.write(line)
 
-            # If lst in not cleared here, it will copy the contents of every previous
-            # file when writing the current one.
+            # If lst in not cleared here, it will copy the contents of every
+            # previous file when writing the current one.
             lst = []
         opened_sub.close()
 
@@ -218,17 +224,22 @@ class Sub:
             print("\nNo new subs found")
 
         elif new_subs == 1:
-            print("\nI scanned " + str(len(new_subs)) + f" subtitle.\n {new_subs}")
+            print(f"\nI scanned {str(len(new_subs))} subtitle.")
+            print(new_subs)
 
         else:
             print("\nI scanned " + str(len(new_subs)) + f" subtitles:")
-            print([x for x in new_subs.keys()])
+            i = 1
+            for scanned_sub in new_subs.keys():
+                print(f"#{i} {scanned_sub}")
+                i += 1
 
             if not len(self.cleaned_files):
-                print("None of them had recognized ads. ")
+                print("\nNone of them had recognized ads.")
 
             else:
-                print(str(len(self.cleaned_files)) + " of them had ads. ")
+                containedAds = set(self.cleaned_files)
+                print(f"\n{str(len(containedAds))} of them had ads.")
 
         new_subs = {}
         self.cleaned_files = []
