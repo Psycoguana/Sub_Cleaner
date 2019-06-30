@@ -257,5 +257,8 @@ def format_timer(total_time):
 
     finished_message = "Completed in " + total_time
 
+    # Play beeping sound
+    os.system("play -nq -t alsa synth 0.1 sine 480")
+
     # Print finished_message in green bold
     print('\033[92m' + '\033[1m' + finished_message + '\033[0m')
