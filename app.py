@@ -131,35 +131,14 @@ class Sub:
         Decide whether it should pass every sub
         to remove_junk or just new ones
         """
-
-        self.insert_to_database(new_subs)
+        new_values = set(new_subs)
+        DATABASE.insert_new_values(new_values)
 
         if self.scan_type:  # Full Scan
             self.remove_junk(self.encoding, sub_dict)
 
         else:  # Normal scan
             self.remove_junk(self.encoding, new_subs)
-
-    @staticmethod
-    def insert_to_database(to_insert):
-        """
-        Insert every new subtitle name into database.
-        Default value for ad_found column will be 0
-        """
-
-        current_time = datetime.datetime.now()
-
-        connection = sqlite3.connect(DATABASE_NAME)
-        cursor = connection.cursor()
-
-        to_insert_set = set(to_insert)  # Remove duplicated strings.
-
-        for name in to_insert_set:
-            cursor.execute('INSERT OR IGNORE INTO subs VALUES (?, ?, ?)',
-                (name, 0, current_time,))
-
-        connection.commit()
-        connection.close()
 
     def remove_junk(self, encoding, sub_paths):
         """Remove unwanted lines from sub files"""
@@ -168,7 +147,7 @@ class Sub:
 
         for sub_name, sub_path in sub_paths.items():
             opened_sub = open(os.path.join(self.parent, sub_path), 'r',
-                encoding=encoding)
+                              encoding=encoding)
             try:
                 for line in opened_sub:
 
