@@ -28,6 +28,19 @@ class ConnectionToDatabase:
         connection.commit()
         connection.close()
 
+    def insert_new_values(self, to_insert_data):
+        current_time = datetime.datetime.now()
+
+        connection = sqlite3.connect(DATABASE_NAME)
+        cursor = connection.cursor()
+
+        for name in to_insert_data:
+            cursor.execute('INSERT OR IGNORE INTO subs VALUES (?, ?, ?)',
+            (name, 0, current_time,))
+
+        connection.commit()
+        connection.close()
+
     def get_values(self):
         """Get and return every value inside the database"""
         connection = sqlite3.connect(self.database)
