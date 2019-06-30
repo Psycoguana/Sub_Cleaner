@@ -3,10 +3,11 @@ Every call that comes from main.py is handled here; some of these functions
 will be calling data.py if they need anything from the database.
 """
 
-import os
 import fnmatch
-from typing import List, Any
+import os
+from datetime import datetime as dt
 from sqlite3 import DatabaseError
+from typing import List, Any
 
 from data import *
 from config import BLACKLIST
@@ -17,6 +18,7 @@ DATABASE = ConnectionToDatabase()
 DATABASE_NAME = DATABASE.get_name()
 new_subs = {}
 sub_dict = {}
+sub_info = []
 
 
 class Sub:
@@ -29,19 +31,19 @@ class Sub:
 
     def start_scan(self):
         """
-        I thinks this could be called a wrapper? Call this function and all the necessary functions
+        Call this function and all the necessary functions
         get called aswell.
         """
 
         self.create_sub_table()
-        self.get_sub_paths()
-        self.is_in_database()
+        self.get_sub_info()
 
-        # Insert new subs into db, then check scan type and call remove_junk accordingly.
+        # Insert new subs into db,
+        # then check scan type and call remove_junk accordingly.
         self.normal_or_full()
 
         # If subs with ads were found, update the ad_found column with a 1.
-        DATABASE.update_database(self.cleaned_files)
+        DATABASE.update_database(self.cleaned_files, True)
 
         self.count_scanned_files()
 
@@ -58,14 +60,21 @@ class Sub:
     def get_database_names():
         """Get every value in the database"""
 
-        DATABASE.get_values()
+        return DATABASE.get_values()
 
-    def get_sub_paths(self):
+    def get_sub_info(self):
         """Get every .srt file name and absolute path under parent folder"""
 
         for file in os.listdir(self.parent):
             if file.endswith('.srt'):
                 file_abspath = os.path.abspath(os.path.join(self.parent, file))
+                file_last_mod = os.path.getmtime(file_abspath)  # Get Unix timestamp
+                file_last_mod = dt.fromtimestamp(file_last_mod)  # Convert it to datetime
+
+                global sub_info
+                # TODO: Please change this horror.
+                #  Remove_junk takes a dict, so we need to pass a dict (hopefully) created from the sub_info list.
+                sub_info.append([file, file_abspath, file_last_mod])
                 sub_dict.update({file: file_abspath})
 
             else:
@@ -73,14 +82,17 @@ class Sub:
                 if os.path.isdir(current_path):
                     try:
                         subfolder = Sub(current_path, self.scan_type)
-                        subfolder.get_sub_paths()
+                        subfolder.get_sub_info()
 
                     except OSError:
                         pass
+        self.is_in_database(sub_info)
 
     @staticmethod
-    def is_in_database():
+    def is_in_database(sub_info):
         """Get every new sub which will be inserted to the db by insert_to_db"""
+
+        # TODO: move this function to data.py
 
         connection = sqlite3.connect(DATABASE_NAME)
         # Change default transaction value, highly improves database writing speed.
@@ -88,15 +100,25 @@ class Sub:
         cursor = connection.cursor()
 
         try:
-            for name, path in sub_dict.items():
-                cursor.execute('SELECT count(*) FROM subs WHERE name = ?', (name,))
+            for sub in sub_info:
+                sub_name = sub[0]
+                sub_path = sub[1]
+                file_last_mod_date = sub[2]
+
+                cursor.execute('SELECT count(*) FROM subs WHERE name = ?', (sub_name,))
                 is_in_database = cursor.fetchone()[0]
 
                 if is_in_database == 1:  # In database
-                    pass
+                    # Select a row if the actual file has been modified since the last scan.
+                    cursor.execute('SELECT name FROM subs WHERE name = ? AND last_mod_date < ?',
+                                   (sub_name, file_last_mod_date,))
+
+                    if cursor.fetchone():
+                        new_subs.update({sub_name: sub_path})
 
                 elif is_in_database == 0:  # Not in database
-                    new_subs.update({name: path})
+                    new_subs.update({sub_name: sub_path})
+
         except DatabaseError as error:
             print(error)
             connection.rollback()
@@ -105,7 +127,10 @@ class Sub:
         connection.close()
 
     def normal_or_full(self):
-        """Decide whether it should pass every sub to remove_junk or just new ones"""
+        """
+        Decide whether it should pass every sub
+        to remove_junk or just new ones
+        """
 
         self.insert_to_database(new_subs)
 
@@ -122,13 +147,16 @@ class Sub:
         Default value for ad_found column will be 0
         """
 
+        current_time = datetime.datetime.now()
+
         connection = sqlite3.connect(DATABASE_NAME)
         cursor = connection.cursor()
 
         to_insert_set = set(to_insert)  # Remove duplicated strings.
 
         for name in to_insert_set:
-            cursor.execute('INSERT OR IGNORE INTO subs VALUES (?, ?)', (name, 0))
+            cursor.execute('INSERT OR IGNORE INTO subs VALUES (?, ?, ?)',
+                (name, 0, current_time,))
 
         connection.commit()
         connection.close()
@@ -136,24 +164,30 @@ class Sub:
     def remove_junk(self, encoding, sub_paths):
         """Remove unwanted lines from sub files"""
 
+        update_dates = []
+
         for sub_name, sub_path in sub_paths.items():
-            opened_sub = open(os.path.join(self.parent, sub_path), 'r', encoding=encoding)
+            opened_sub = open(os.path.join(self.parent, sub_path), 'r',
+                encoding=encoding)
             try:
                 for line in opened_sub:
 
                     # Looks for matching lines inside file.
                     # This is case-INSENSITIVE. It also allows wildcards.
                     for match in BLACKLIST:
-                        if fnmatch.fnmatch(line, match):
+                        if fnmatch.fnmatch(line.lower(), match.lower()):
+                            self.cleaned_files.append(sub_name)
                             print(f'Cleaning {sub_name}')
                             print(line)
 
-                            self.cleaned_files.append(sub_name)
                             line = line.replace(line, '')
                     global lst
                     lst.append(line)
 
                 self.write_new_sub(encoding, sub_path)
+
+                if opened_sub not in self.cleaned_files:
+                    update_dates.append(sub_name)
 
             # If file can't be opened in UTF-8, use ISO-8859-1 instead.
             except UnicodeDecodeError:
@@ -161,7 +195,9 @@ class Sub:
             except OSError:
                 pass
 
-            opened_sub.close()
+            finally:
+                opened_sub.close()
+        DATABASE.update_database(update_dates, False)
 
     def write_new_sub(self, encoding, sub_path):
         """ Opens file in write mode and replaces
@@ -172,27 +208,38 @@ class Sub:
         for line in lst:
             opened_sub.write(line)
 
-            # If lst in not cleared here, it will copy the contents of every previous
-            # file when writing the current one.
+            # If lst in not cleared here, it will copy the contents of every
+            # previous file when writing the current one.
             lst = []
         opened_sub.close()
 
     def count_scanned_files(self):
         """Count new scanned files, and cleaned files."""
 
+        # TODO: This doesn't work, it will always say 1 sub was scanned
+
         global new_subs
 
         if new_subs == {}:
             print("\nNo new subs found")
 
+        elif new_subs == 1:
+            print(f"\nI scanned {str(len(new_subs))} subtitle.")
+            print(new_subs)
+
         else:
-            print("\nI scanned " + str(len(new_subs)) + " new subtitles.")
+            print("\nI scanned " + str(len(new_subs)) + f" subtitles:")
+            i = 1
+            for scanned_sub in new_subs.keys():
+                print(f"#{i} {scanned_sub}")
+                i += 1
 
             if not len(self.cleaned_files):
-                print("None of them had recognized ads. ")
+                print("\nNone of them had recognized ads.")
 
             else:
-                print(str(len(self.cleaned_files)) + " of them had ads. ")
+                containedAds = set(self.cleaned_files)
+                print(f"\n{str(len(containedAds))} of them had ads.")
 
         new_subs = {}
         self.cleaned_files = []
@@ -208,4 +255,7 @@ def format_timer(total_time):
     else:
         total_time = '{:3.2f} minutes'.format(total_time / 60)
 
-    print("Completed in " + total_time)
+    finished_message = "Completed in " + total_time
+
+    # Print finished_message in green bold
+    print('\033[92m' + '\033[1m' + finished_message + '\033[0m')
