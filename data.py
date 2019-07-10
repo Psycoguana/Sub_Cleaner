@@ -5,13 +5,14 @@ such as getting it's name, it's values and even some statistics.
 
 import datetime
 import sqlite3
+import os
 
 from config import DATABASE_LOCATION, DATABASE_NAME
 
 
 class ConnectionToDatabase:
     def __init__(self):
-        self.database = "".join((DATABASE_LOCATION, DATABASE_NAME))
+        self.database = os.path.join(DATABASE_LOCATION, DATABASE_NAME)
 
     def get_name(self):
         """Return the database name"""

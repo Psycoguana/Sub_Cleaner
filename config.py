@@ -1,8 +1,8 @@
-DATABASE_LOCATION = '/home/psyco/Programming/Python/Sub_cleaner/'  # Folder where the database is located
+DATABASE_LOCATION = '/home/psyco/Programming/Python/Sub_Cleaner'  # Folder where the database is located
 
 DATABASE_NAME = 'sub_master.db'  # Databas name
 
-PARENT_FOLDER = '/mnt/datos/Users/Psycoguana/Videos'  # Folder to scan
+PARENT_FOLDER = '/media/datos/Users/Psycoguana/Videos'  # Folder to scan
 
 BLACKLIST = ['[###]',
              '*a Card Shark AMERICASCARDROOM*',
